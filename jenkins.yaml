@@ -1,0 +1,62 @@
+version: '3'
+services:
+  jenkins-certs:
+    image: docker:20.10.9-dind
+    volumes:
+      - type: bind
+        source: C:/Dev/Jenkins/jenkins-acbis/volumes/jenkins/certs
+        target: /certs/client
+      - type: bind
+        source: C:/Dev/Jenkins/jenkins-acbis/volumes/jenkins/data
+        target: /var/jenkins_home
+    privileged: true
+    networks:
+      jenkins:
+        # alternative hostnames
+        aliases: ["docker"]
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+      TZ: Europe/Berlin
+    container_name: jenkins-cert
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 512M
+  jenkins:
+    build:
+      context: .
+    ports:
+      - published: 9000
+        target: 8080
+    depends_on: ["jenkins-certs"]
+    volumes:
+      - type: bind
+        source: C:/Dev/Jenkins/jenkins-acbis/volumes/jenkins/certs
+        target: /certs/client
+        read_only: true
+      - type: bind
+        source: C:/Dev/Jenkins/jenkins-acbis/volumes/jenkins/data
+        target: /var/jenkins_home
+      - type: bind
+        source: .
+        # siehe "Repository URL" in der Job-Definition
+        target: /git-repository/prometheus
+        read_only: true
+    networks: ["jenkins"]
+    environment:
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_TLS_VERIFY: 1
+      TZ: Europe/Berlin
+    container_name: jenkins
+    hostname: jenkins
+    #deploy:
+    #  resources:
+    #    limits:
+    #      cpus: "2"
+    #      memory: 4096M
+volumes:
+  jenkins_home:
+networks:
+  jenkins: {}
