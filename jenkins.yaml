@@ -24,12 +24,17 @@ services:
           cpus: "2"
           memory: 512M
   jenkins:
+    # Dockerfile
     build:
+      # aktuelles Verzeichnis
       context: .
+      args:
+        MAVEN_VER: 3.8.6
     ports:
       - published: 9000
         target: 8080
     depends_on: ["jenkins-certs"]
+    # Mappings
     volumes:
       - type: bind
         source: C:/Dev/Jenkins/jenkins-acbis/volumes/jenkins/certs
@@ -49,6 +54,9 @@ services:
       DOCKER_CERT_PATH: /certs/client
       DOCKER_TLS_VERIFY: 1
       TZ: Europe/Berlin
+      MAVEN_HOME: /opt/maven
+      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64 
+      hudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT: true
     container_name: jenkins
     hostname: jenkins
     #deploy:

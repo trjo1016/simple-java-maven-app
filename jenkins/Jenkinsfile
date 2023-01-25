@@ -2,6 +2,28 @@ pipeline {
     agent any
 
     stages {
+        stage('Init') {
+            // Step = einzelne Aufgabe
+            steps {
+                script {
+                    if (!isUnix()) {
+                        error 'Unix ist erforderlich'
+                    }
+                }
+
+                echo "Jenkins-Job ${env.JOB_NAME} #${env.BUILD_ID} mit Workspace ${env.WORKSPACE}"
+
+                // Unterverzeichnisse src und test im WORKSPACE loeschen: vom letzten Build
+                // Kurzform fuer: sh([script: '...'])
+                sh 'rm -rf src'
+                sh 'rm -rf test'
+
+                // https://www.jenkins.io/doc/pipeline/steps/git
+                // "named arguments" statt Funktionsaufruf mit Klammern
+                // duch "docker compose" wird /git-repository auf "." in Windows abgebildet
+                git url: 'file:///git-repository/prometheus', branch: 'master', poll: true
+            }
+        }
         stage('Build') {
             steps {
                 sh 'mvn -B -DskipTests clean package'
@@ -15,6 +37,11 @@ pipeline {
                 always {
                     junit 'target/surefire-reports/*.xml'
                 }
+            }
+        }
+        stage('Install') {
+            steps {
+                sh 'mvn -B -DskipTests install'
             }
         }
         stage('Deliver') {
